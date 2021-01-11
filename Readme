@@ -1,0 +1,105 @@
+Sub stockAggregator()
+
+'loop worksheets
+Dim WS_Count As Integer
+WS_Count = Application.Sheets.Count
+
+For i = 1 To WS_Count
+
+Worksheets(i).Activate
+
+    'output header rows
+    Cells(1, 9).Value = "Ticker"
+    Cells(1, 10).Value = "Yearly Change"
+    Cells(1, 11).Value = "Percent Change"
+    Cells(1, 12).Value = "Total Stock Volume"
+
+        Dim stockTicker As String
+        Dim openPrice As Currency
+        Dim closePrice As Currency
+        Dim stockVolume As Double
+        stockVolume = 0
+        Dim YearlyChange As Currency
+        Dim PctChange As Double
+             
+    
+    'last row in sheet
+    lastrow = Cells(Rows.Count, 1).End(xlUp).Row
+    'define row to place ticker data
+    Dim summary_table_row As Integer
+        summary_table_row = 2
+
+        
+        
+        For j = 2 To lastrow
+   
+           
+    
+        'find and store open price
+        If Cells(j - 1, 1).Value <> Cells(j, 1).Value And Cells(j, 3).Value <> 0 Then
+        openPrice = Cells(j, 3).Value 'true for items where stock existed at beginning of year
+        ElseIf Cells(j - 1, 1).Value <> Cells(j, 1).Value And Cells(j, 3).Value = 0 Then 'evaluate for IPOs in given year
+        stockTicker = Cells(j, 1).Value
+            If stockTicker = Cells(j + 1, 1).Value And Cells(j, 3).Value > 0 Then
+            openPrice = Cells(j, 3).Value
+            End If
+        
+        End If
+        
+        'check for next stock ticker
+        If Cells(j + 1, 1).Value <> Cells(j, 1).Value Then
+        stockTicker = Cells(j, 1).Value 'set stock ticker
+        closePrice = Cells(j, 6).Value 'find closing price for stock for year
+        stockVolume = stockVolume + Cells(j, 7).Value 'add to stock volume
+        
+        Range("I" & summary_table_row).Value = stockTicker 'output stock ticker
+        
+        YearlyChange = (closePrice - openPrice) 'formula to calculate yearly change
+        Range("J" & summary_table_row).Value = YearlyChange 'output dollar change for year
+            'conditional to change cell color based on stock dollar change
+            If Range("J" & summary_table_row).Value < 0 Then
+            Range("J" & summary_table_row).Interior.ColorIndex = 3
+            Else: Range("J" & summary_table_row).Interior.ColorIndex = 4
+            End If
+                    
+            'if statement to calculate pct change and deal with errors
+            If closePrice = 0 And openPrice = 0 Then
+            PctChange = 0
+        
+            Else
+            PctChange = (closePrice / openPrice) - 1 'formula to calculate pct change
+            Range("K" & summary_table_row).Value = PctChange 'output pct change for year
+            Range("K" & summary_table_row).NumberFormat = "0.00%" 'format pct change column to percent
+        
+            End If
+        
+        Range("L" & summary_table_row).Value = stockVolume 'output stock volume
+
+              
+    
+        'move to next row in output table
+        summary_table_row = summary_table_row + 1
+        
+        'reset stockVolume to 0
+        stockVolume = 0
+           
+    
+        Else:
+    
+        'add to stock volume
+        stockVolume = stockVolume + Cells(j, 7).Value
+    
+        End If
+        
+        Next j
+        
+'adjust column width
+Worksheets(i).Columns("A:L").AutoFit
+        
+Next i
+
+End Sub
+
+
+
+
